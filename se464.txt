@@ -1,0 +1,161 @@
+Chapter 12
+==========
+
+- STUPID Principal
+	Things to avoid:
+	- Singleton
+	- Tight coupling
+	- Untestable
+	- Premature Optimization
+	- Indescriptive Naming
+	- Duplication
+
+- Follow these guidelines: SOLID principal
+	- Single responsibility principal
+	- Open closed principal
+	- Liskov Substitution Principal
+	- Interface segregation principal 
+		- Splitting interface into sections to allow clients to use only what they need
+	- Dependency Inversion Principal
+		- TODO:
+	
+- Composition is better than inheritance
+	- Composition: Create objects with others as members. Has-a relations
+	- Inheritance: Having parent's attrs
+
+- Liskov's sub principal:
+	- Derived classes behaves as parents
+
+* Why do we use design patterns:
+
+Design patterns provide common vocab. Use existing knowledge to solve common problems.
+Robust to future changes. Increases reusability since these patterns promote good 
+code practice. 
+
+* Whats a design pattern?
+
+Common solution to recurring problems. They are lang independent. 
+
+* What are the 4 main parts of design patterns?
+
+1. Name
+2. Problem
+3. Solution
+4. Consequences and trade offs
+ 
+* What are categories of design patterns?
+
+1. Creational
+	- Defer decisions about class instantiation until runtime
+2. Structural
+	- Make relations and structure of the code more flexible
+3. Behavioral
+	- Solve communication problems between objects
+
+Chapter 13
+==========
+
+* Code smells.
+
+Large classes
+Deep nesting
+Duplicate code
+State variables
+Bad encapsulation and info hiding
+Many params on interfaces
+
+Chapter 15
+==========
+
+- Very little info
+
+Chapter 16
+==========
+
+* Why MVC Pattern?
+
+When the UI Changes a lot and the same data needs to be displayed in different
+ways. Testing UI is difficult. We want to only test the logic.
+
+* Goals of MVC?
+
+Decouple models and view to increase the testability and maintainability of the
+system. We also get more extendability.
+
+* Parts of MVC?
+
+Model: contains the app data. Does not know how to present itself.
+View: Presents the model.
+Controller: Communication connection between view and model.
+
+* Whats the interaction in MVC?
+
+User -> View
+View -> Controller
+Controller translates view commands to commands for the model
+Controller -> Model
+Model Changes ? Fire update notifications : Continue
+View responds to update notifications
+
+* What are benefits and trade offs for MVC?
+
+Pros: 
+
++ Decouples view and logic
++ ^ Testability
+
+Cons:
+
+- Complex
+- Efficiency: When the model is large, freq updates are made => loop the
+observers to tell them to updates. When many observers, its inefficient
+
+* What are the patterns used to build MVC?
+
+View/Controller: Strategy pattern to decide during runtime what to do
+View: Composite patterns of ui components
+View/Model: Observer pattern
+
+* Whats the MVP pattern?
+
+Instead of a controller, you now have a presenter that does the application
+logic. View is just a thin layer for the user and has no data storage. Simply
+fires events that the presenter takes. Model is pretty much same as before.
+
+* Pros and cons of the MVP pattern?
+
+Same as MVC but with ^ testablility and ^ decoupling since view knows nothing
+about the model. 
+
+* Whats the Model-View-ViewModel pattern?
+
+Its event driven and introduces viewmodel to decouple view from controller and
+presenter even more. 
+
+* Whats dependency inversion principal?
+
+Programming to interfaces and not to implementations. Answers the question of
+how to wire interfaces togetther without creating dependency on concrete
+implementations. 
+
+* Whats are DI goals?
+
+Eliminate initiatization statements: 
+	
+	Foo f = new ConcreteFoo();
+
+* How is DI achieved?
+
+Takes set of components like classes and interfaces
+Adds to set of configs
+Provides configs to injection framework
+Bootstraps creation of objects with configs
+
+* What are some DI frameworks?
+
+- Google Guice
+- Dagger 
+- Spring
+
+* What is meant by inversion of control?
+
