@@ -1,4 +1,5 @@
-- STUPID Principal
+* What is the STUPID Principal?
+	
 	Things to avoid:
 	- Singleton
 	- Tight coupling
@@ -7,21 +8,23 @@
 	- Indescriptive Naming
 	- Duplication
 
-- Follow these guidelines: SOLID principal
+* What is the SOLID principal?
+
 	- Single responsibility principal
 	- Open closed principal
 	- Liskov Substitution Principal
 	- Interface segregation principal 
 		- Splitting interface into sections to allow clients to use only what they need
 	- Dependency Inversion Principal
-		- TODO:
 	
 - Composition is better than inheritance
+	
 	- Composition: Create objects with others as members. Has-a relations
 	- Inheritance: Having parent's attrs
 
-- Liskov's sub principal:
-	- Derived classes behaves as parents
+* Whats Liskov's sub principal:
+
+Derived classes behaves as parents
 
 * Why do we use design patterns:
 
