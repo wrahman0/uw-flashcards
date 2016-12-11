@@ -149,3 +149,75 @@ Bootstraps creation of objects with configs
 
 * What is meant by inversion of control?
 
+Inversion of control is a design principal where object coupling is done
+during runtime.
+
+* What is grid computing?
+
+Combination of computing resources to work on specific computation task.
+
+* What is cloud computing?
+
+Model which enables access to a set of computing resources which is shared among
+other users. It allows resources to be provisioned, and released with minimal
+overhead. This model promotes availability.
+
+* What are the characteristics of cloud computing?
+
+On demand self-service allows users to allocate resources themselves without
+other human interactions. 
+
+Broad network access allows general networks to access the services
+
+Resource pooling allows resources to be pooled and served to multiple consumers.
+
+Rapid Elasticity allows resources to be added and removed easily
+
+Measured service allows the logging and monitoring of storage, processes and
+bandwidth among other metrics.
+
+* What are the benefits of cloud computing?
+
+- Agility: quickly respond to changes
+- Scalability: add and remove resources to best serve the usage
+- Cost: Resources are shared and can be released when not used
+- Reliability: Central resources are controlled by experts like Amazon
+- Security: Best practices are used to keep allocated resources safe
+
+* What is virtualization?
+
+Refers to the act of creating a virtual version of something. For example,
+virtual OS
+
+* What is SaaS?
+
+Means software as a service. For instance, Google docs is a SaaS because they
+are providing the service of editting docs as a cloud service.
+
+* What is PaaS?
+
+Means platform as a service. Vendor controlled environments are offered as
+services. 
+
+* What is IaaS?
+
+Infrastructure as a service meaning vendor provides computing resources.
+
+* What are the Non-functional requirements for cloud security?
+
+Users want: 
+- Confidentiality
+- Integrity (data not altered)
+- Authenticity
+- Anonymity 
+- Privacy
+
+* What is REST?
+
+Communication protocol that clients use as an interface to talk to the server.
+
+* What are the common REST operations?
+
+GET, PUT, POST, DELETE
+
+ 
