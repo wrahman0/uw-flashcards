@@ -1,3 +1,94 @@
+Pre midterm:
+===========
+
+* What is software arch?
+
+Conceptual fabric that defines a system and how the components interact with
+each other. Arch is usually parts of a system thats hard to change once the
+system is built.
+
+* What are the three dimensions that architecture captures?
+
+- Structure
+- Communication
+- Non functional requirements
+
+* Whats logical and physical arch?
+
+Logical arch is the logical seperation of the system into multiple pieces. For
+instance, the logical seperation of the code into model/view/controller.
+
+Physical arch is the physical seperation of the system into its pieces. For
+instance, the server is hosted in a physical server in Oregon, USA. There is a
+clear physical bound that the system is broken down into.
+
+* Why is building software hard?
+
+- Young field
+- High expectation
+- Software cannot execute indep. It has a hold bunch of pieces that must fit
+	together
+
+* What are some difficulties that cannot be overcome?
+
+- Complexity
+- Conformity - dependancy on the environment on which its built
+- Changeability
+- Intangibility - Not limited by physical laws
+
+* How do you reduce complexity?
+
+- Use better tools and envs
+- Use high level langs
+- Follow dev techniques like agile
+- Focus on having a good design
+
+* What does "Principal" design decision mean and why is it different from
+* normal?
+
+Principal design decisions simply mean that the design has a level of importance
+that grants it the architectural status.
+
+* What is abstraction?
+
+Removing the unnecessary details and providing a compact interface thats easy to
+use. The interface does not expose any implementation details.
+
+* What is decomposition?
+
+Breaking problem into individual components
+
+* What are decomposition criteria?
+
+- Implementation teams
+- parallelization
+- obvious partitions
+
+* Whats arch models, views, and visuals?
+
+- models - doc about some or all of the design decisions in a system
+- views - subset of related design decisions
+- visuals - way of showing some/all of arch to stakeholders
+
+* What is the purpose of a sequence diag?
+
+It shows inter component collaboration
+
+* What does a deployment diagram depict?
+
+Shows the mapping of components to physical devices
+
+* What are state charts for?
+
+Formal description of system's behav
+
+* What is software topology?
+
+Keep frequent collaborators close physically and logically
+
+Post midterm: 
+============
+
 * What is the STUPID Principal?
 	
 	Things to avoid:
@@ -220,4 +311,138 @@ Communication protocol that clients use as an interface to talk to the server.
 
 GET, PUT, POST, DELETE
 
- 
+* What are the benefits of typed systems?
+
+- Improved documentation
+- Helps compilers during optimization phase
+
+Negatives: Must declare types during compile time
+
+* What does a type checker guarantee?
+
+* What is functional programming?
+
+The idea of treating functions as first class entities in a language. Functions 
+are taken in as arguments and returned as results. The language has no states,
+instead its a series of transformation of functions.
+
+* What is principal design decision?
+
+A set of decisions made about the system that gives it "Arch" status.
+
+* What is software architecture?
+
+Software architecture is a set of principal design decisions about the system.
+Its the blueprint for the software system.
+
+* Whats Functional vs Non Functional requirements?
+
+Functional requirement is what a system must do.
+Non funct. requirement is what a system must be.
+
+* What is a Non-func property?
+
+Constraint on how the system implements and delivers in functions.
+
+* What are examples of NFP?
+
+- Efficiency
+- Scalability
+- Adaptability
+- Complexity
+- Hetrogeneity
+- Dependability
+
+* Who are the stakeholders of a system?
+
+- Architect
+- Devs
+- Testers
+- Managers
+- Customers
+- Users
+- Vendors
+
+* Whats prescriptive vs descriptive architecture?
+
+Prescriptive is the design that was proposed before the system was even
+implemented. Descriptive is how the system is actually built.
+
+* Whats architectural degradation?
+
+Arch degradation is encompassed by arch drift and arch erosion.
+
+Arch. drift is the intro of principal design into system's descriptive
+architecture that do no violate prescriptive architecture and were not
+originally in the prescriptive architecture. 
+
+Arch. erosion is intro of design decisions that violate the prescriptive
+architecture.
+
+* What is arch recovery?
+
+Figuring out the system's architecture from implementation details.
+
+* What are components in an architecture?
+
+Its a software component that encapsulates a subset of the system logic and/or
+holds a subset of the data. It restricts access to this subset of computation
+and storage via an explicit interface.
+
+* What are connectors in an architecture?
+
+They are entities that enable the communication between software components.
+Usually is application independent.
+
+* What are configurations in an architecture?
+
+Configs are a set of specific associations between components and connectors.
+Essentially how the system's components and connectors are setup.
+
+* What are the goals of topology?
+
+Minimize coupling, maximize cohesion.
+
+* What are properties of architectural representations?
+
+Ambiguity - open to many interpretations, 
+Accuracy - correct within tolerances,
+Precision - consistent but not necessarily correct.
+
+* What are arch styles?
+
+Arch styles are a named collection of arch design decisions that are applicable
+in a given situation. 
+
+* What are the design principals for security?
+
+- Least priv
+- Fail-safe defaults
+- Economy of mechanism - adopt simple mechanisms
+- Complete mediation - ensure all accesses are checked and permitted
+- Open design - dont rely on secrecy being a level of protection
+- Seperation of priv - Categorize users to grant different access levels
+- Least common mechanism - have few access ways to crit resources
+- Psycological acceptability - make it easy to use so that ppl use it
+- Defence in depty: have many layers of security
+
+* What is architectural modelling? 
+
+Document to capture some/all of the design decisions made to build a system.
+
+* What is the diff between analysis and design?
+
+TODO:
+
+* What are the parts of a design process?
+
+for (;;){
+	Build();
+	Measure();
+	Learn();
+}
+
+* What does an optional type checker do?
+
+Its a pluggable behaviour into the build system which provides guarantees about
+a section of code. If the plugged in rules are not met, warnings are generated.
