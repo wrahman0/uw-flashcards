@@ -86,6 +86,166 @@ Formal description of system's behav
 
 Keep frequent collaborators close physically and logically
 
+* What are the design process steps?
+
+- Ideation
+- Analysis
+- Selection
+- Elaboration
+- Iteration
+
+* Why is Desc arch modified before presc arch in the real world?
+
+People dont have time for sitting and planning all day. They have deadlines and
+are also sloppy. The tools and processes also could be lacking along with dev
+skills.
+
+* What are the two types of degredation?
+
+- Drift
+- Erosion
+
+* What are some arch elements?
+
+- Interfaces
+- Components
+- Connectors
+- Rationale
+- Configs
+
+* What do arch elements do?
+
+- Process data
+- Store data
+- Interact between components
+
+* What are topological goals?
+
+- Minimize coupling in that components should know as few details as possible
+	about other components
+
+- Maximize cohesion in that components should do one task well
+
+* How do you ensure better NFP?
+
+- Promise, dont guarantee
+- Only guidelines, not laws
+- Have caveats and exceptions
+- Mention the trade offs
+- Necessary but not sufficient
+
+* Whats the Layer style?
+
+Each layer acts as a server and client where the server is service providers of
+the layers above and the clients is consumers of levels below. Layers interact
+via connectors. 
+
+Pros: 
+- Increasing abstraction layers. 
+- Evolution is easy since the layers are loosely connected.
+
+Cons: 
+- Not always applicable
+- Performance when calling layers way above since you need to pass info through
+	layers instead of directly talking to those layers
+
+* What is the client server-server style?
+
+Components are both clients and servers. Servers dont know how many clients or
+who they are. ie. P2P services like torrent.
+
+* What is the data-flow style?
+
+This is when the data is flowing from one program to another and the data
+evolves. Connectors are physical connectors like usbs. 
+
+* Whats the pipe and filter style?
+
+Data is piped and transformed as it flows from one script to the other. 
+
+* What is the blackboard style?
+
+There is a central shared data store that all the clients view.
+
+Pros: 
+- Easy sync
+
+Cons:
+- Potential bottleneck at the backboard server
+
+* What is the rule based style?
+
+Adds rules and facts to a pool of facts. Query is also allowed to search the
+knowledge pool. 
+
+Pros:
+- Each rule is its own unit -> modular
+- Same formatted
+
+Cons: 
+- Contradicting rules
+
+* What is the interpreter style?
+
+Essentially a DFA is maintained and commands are sent to update the state. Used
+to parse expressions.
+
+Pros: 
+- Dynamic behaviour
+- Easy to change capabailities
+
+Cons:
+- Efficiency
+
+* What is the implicit invocation style?
+
+Events are broadcasted instead of function calls. 
+
+Pros:
+- Code reuse
+
+Cons:
+- No guarantee on ordering of events being fired
+
+* What is peer to peer style?
+
+Components are both clients and servers
+
+Pros:
+- Low cost of maintenance
+
+Cons:
+- Security
+- Low system structure
+
+* What are the two ways to recover design?
+
+- Semantic clustering
+- Syntactic clustering
+
+* How do you recover design?
+
+Syntactic clustering makes static relations among code-level entities. It can be
+done without executing any code. Ignores subtle relations that are hard to
+detect. 
+
+Semantic clustering is when the code is run and relations are established. The
+code is run on a set of inputs that represent the possible inputs. This is
+difficult to automate.
+
+* What are possible types of attacks from hackers?
+
+- Impersonation
+- Fraud actions
+- Misrepresentations
+- Collusion
+
+* What does chrome do to be more secure?
+
+- Sandboxing
+- Auto updates
+- Warn about sites
+
 Post midterm: 
 ============
 
