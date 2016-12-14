@@ -1,0 +1,465 @@
+Chapter 6
+
+* Lock Programming
+
+- What is buffering?
+
+When tasks communicate using a queue. Consumers pick up tasks in front of the
+queue while producers put tasks at the back. 
+
+- How do you control access when using a buffer?
+
+Have a counting semaphore. Initialize it to 0. When producers place thing in,
+increase the number by one, ie .V(). When consumers take it, reduce it by 1, ie
+.P().
+
+Sample:
+void Producer::main(){
+	for (;;){
+		// prod
+		sem.V();	
+	}
+}
+
+void Consumer::main(){
+	for(;;){
+		sem.P();
+		// take an item
+	}
+}
+
+- Is there a problem when we add/remove from a shared queue?
+
+Yes. Lets say sem = 3 and 2 consumers acquires the lock. They can both remove an
+item from the queue. If they go at the same time, they take the same item and
+cause issues because it seems like we consumed two items. However, in reality,
+we processed just one.
+
+- Is the semaphore above used for ME or sync?
+
+Used for ME because it controls how/who is allowed into the critical section at
+any given time. 
+
+- Whats bounded vs unbounded?
+
+Bounded has finite length, unlike unbounded.
+
+- What additional mechanism is needed for bounded queue?
+
+We need an additional counting semaphore. The previous was for figuring when the
+consumers needed to wait. We now need one when the producers need to wait.
+
+void Producer::main(){
+	for (;;){
+		sem2.P(); // if the buffer is full, wait
+		// prod
+		sem.V();	
+	}
+}
+
+void Consumer::main(){
+	for(;;){
+		sem.P();
+		// Took an item, thus, there is one empty slot. Signal prod
+		sem2.V(); 
+	}
+}
+
+** Locking Techniques
+
+- What is a split binary semaphore?
+
+A collection of semaphores where at most one is 1, others are 0. Used when
+different tasks block based on their own independent criteria.
+
+- What is baton passing?
+
+Conceptual idea that helps you understand what goes on in the case of split
+binary semaphores. Rules are that:
+
+- One baton
+- No task moves in the exit/entry code unless they have the baton
+- Once baton released, cannot view variables in the entry/exit regions
+
+- Can mutex/condition locks perform baton passing to prevent barging?
+
+Lets say a task is waiting on a condition lock. It gets signalled but the
+signaller is still going because they haven't released the lock. The waiting
+task is still waiting, and there could be a race with a new task. If the race is
+won by the new task, then it just barged in front of the waiting task. Thus,
+no. 
+
+- What is the reader/writer problem?
+
+Multiple tasks sharing a resource. Some reading others writing. We want to allow
+concurrent readers but only one writter. 
+
+Using split binary semaphore, we split arrivers, readers and writers.
+
+uSemaphore entry_q(1), read_q(0), write_q(0);
+int r_waiting = 0, w_waiting = 0, r_count = 0, w_count = 0;
+
+void Reader::main(){
+	// Need access to the entry location since only one task has baton
+	entry_q.P();
+	if ( w_count > 0 ) { // we have active writer
+		r_waiting += 1; 
+		entry_q.V(); // release the baton
+		read_q.P(); // block on the read queue
+	}
+
+	r_count += 1; // we are now able to read.
+
+	if ( r_waiting > 0 ) {
+		// signal a waiting reader since reading has begun
+		r_waiting -= 1;
+		read_q.V();
+	} else {
+		// last waiting reader needs to open up the entry code to both
+		// reader and writer
+		entry_q.V(); 
+	}
+	
+	yield(); // simulate a read
+
+	entry_q.P(); // After done, we need baton to move in the exit code
+
+	r_count -= 1; // we just left, thus one less reader
+	if ( r_count == 0 && w_waiting > 0 ) {
+		// if writers are waiting, let them in
+		w_waiting -= 1;
+		write_q.V();
+	} else {
+		// Otherwise open to all
+		entry_q.V();
+	}
+}
+
+void Writer::main() {
+	// Need access to the baton for entry code
+	entry_q.P();
+	// We need to wait if there is reader OR writer in the room
+	if ( r_count > 0 || w_count > ) {
+		w_waiting += 1;
+		entry_q.V(); // release the baton
+		writer_q.P(); // Wait on the writer bench
+	}
+	
+	w_count += 1;
+	entry_q.V(); // release the baton
+
+	if ( r_waiting > 0 ) {
+		r_waiting -= 1; read_q.V();
+	} else if ( w_waiting > 0 ) {
+		w_waiting -= 1; write_q.V();
+	} else { entry_q.V(); } // release the baton
+}
+
+- What is the problem? 
+
+Writers can be starved.
+
+- Whats the solution to starvation?
+
+If we add a || w_waiting > 0 clause in the reader guard, then readers can now
+starve. 
+
+Use Dekker's algo to alternate when there are ties. If reader goes once, then
+next time, force the writer to go. Problem is now staleness and freshness. It
+could be that the writer needs to update the values but cant go because writers
+are blocked. Meanwhile, readers reading stale data. If there are consecutive
+writers then the data is too fresh. 
+
+- What is temporal ordering?
+
+Temporal ordering is when the readers and writers are served in FIFO ordering.
+We need one semaphore for that otherwise we dont distinguish between reader vs
+writer arrival times.
+
+We can use a shadow queue to get the type of task info. For instance, we can
+have a shadow queue of:
+
+Shadow queue: 
+Reader -> Writer -> Writer
+
+Semaphore:
+Task -> Task -> Task
+
+- Whats the solution to the reader writer temporal problem?
+
+Solution 5: Have a writer chair. If chair is empty, then unblock tasks in
+reader/writer sem. If a writer is unblocked, place on chair. 
+
+Solution 6: 
+
+Situation
+For writer: 
+- Pick up baton, check reader is using resource
+- Put down the baton, entry.V(), then gets time sliced before wait X_p.P()
+- Another writer does the same thing
+- Writers start at any order => freshness problem
+
+Situation
+For reader: 
+- Pick up baton and see if writer using resource
+- Put down the baton, entry.V(), then gets time sliced. 
+- Happens multiple times => resumption is any order
+
+Thought:
+We can have atomic block and release or ticket method 
+X.P(entry_q); //uC++ semaphore
+
+Ticket solution:
+- Reader/writer take ticket before putting baton down
+- To pass baton, serving counter is incremented and then wake all blocked
+- Each woken one checks to see if their ticket is being served
+- No starvation since waiting queue is bounded length and you will be served
+- Inefficient AF
+
+Private semaphore solution:
+- List of private semaphores, one for each waiting task
+- Add to list of nodes before entry.V() then block on private semaphore
+- To pass baton V on the private semaphore head if present
+
+Chapter 7
+
+* Race Conditions
+
+- What is a race condition and when do they occur?
+
+Race condition occurs when there is a missing sync or mutual exclusion. Two
+tasks continue with the assumption that sync took place and depending on
+execution speed for each run, outcome will vary and is undeterministic.
+
+* No Progress
+
+** Live-lock
+
+- What is livelocking?
+
+Its the indef postponement. Each task says: "You go first" and no one gets to
+go.
+
+- What causes live-locking? 
+
+It is caused by poor scheduling in entry protocol
+
+** Starvation
+
+- What is starvation?
+
+A waiting task never gets serviced due to the selection algorithm
+
+** Deadlocking
+
+- What is deadlocking?
+
+A state when one or more process is waiting for an event that will never occur.
+
+- What is the difference between livelocking and deadlocking?
+
+In livelocking, the tasks are always changing states and checking each other for
+an update. The CPU is maxed out during this process. In deadlocking, the task is
+waiting on some sort of lock and never gets serviced. As a result, the CPU does
+no work and idles. 
+
+- What is sync deadlock?
+
+Sync deadlock is failure in cooperation. A waiting task is waiting on the
+cooperation to finish but never happens.
+
+- What is ME deadlock?
+
+When a task waits on a resource and is unable to acquire a resource thats locked
+in ME. 
+
+- What are the 5 conditions for deadlock?
+
+1. There is one or more shared resource requiring ME
+2. A process goes to sleep while holding a resource (hold and wait)
+3. The runtime sys cant forcefully get a held resource of a waiting task
+4. There is a circular wait of processes on resources
+5. These conditions happen simultaneously
+
+Neat idea: since we need all 5, prevent one and you have no deadlock
+
+* Deadlock Prevention
+
+** Sync Prevention
+
+- How do you prevent sync deadlock?
+
+Get rid of all sync in a program => no communication. All tasks are indep
+
+- How do you prevent ME deadlock?
+
+1. No ME => not realistic
+2. No hold and wait. Only give all res or none. 
+	- Poor res util
+	- Starvation possible when a resource set is never avail and someone waits for
+		it
+3. Allow preemption for runtime sys
+4. Dont have circ wait
+5. Prevent simultaneous occurrence
+
+- How do you prevent circular wait on a resource:
+
+1. Divide resource to classes R1 ... Rn.
+2. Cannot request resource from a class Ri if not holding res from Rj, j >= i.
+	=> Have to request resources in increasing order of category number
+
+* Deadlock avoidance
+
+* Bankers algorithm
+
+Show that a safe resource allocation path exists
+
+* Allocation graphs
+
+When a resource is allocated, draw line from process to resource. 
+
+- How can you determine deadlocks from a graph?
+
+No directed cycle
+
+- How do you use graph reduction to locate deadlocks?
+
+1. Create a graph where resources are duplicated when multiple tasks need it
+2. Find a task with only inwards arrows ( it has all the resources )
+3. Delete the task ( completed )
+4. Flip resource arrows to processes that need it
+5. Repeat.
+
+If you can finish, no deadlock. If you get stuck, deadlock
+
+* Detection and recovery
+
+- What do you need for deadlock recovery?
+
+Preemption
+
+Chapter 8
+
+* Critical Regions
+
+- How can language help with critical regions?
+
+Provide REGION statements
+
+- How can nesting result in deadlocks?
+
+VAR x, y: SHARED INTEGER
+
+task1:
+REGION x DO
+	REGION y DO
+
+	END REGION
+END REGION
+
+task2:
+REGION y DO
+	REGION x DO
+
+	END REGION
+END REGION
+
+- Why is simult reads impossible?
+
+Lock needed before any read is done
+
+- Why is REGION statement better?
+
+Compiler can catch it
+
+- Why is this bad? 
+
+Since we allow reads from the outside without REGION statements, it can seem
+that values are flickering while reading because some task is updating those
+values.
+
+* Conditional Critical Regions
+
+REGION v DO
+	AWAIT conditional-expression
+
+END REGION
+
+If condition is false, we release the lock and busy wait on the lock
+
+* Monitor
+
+- What is a monitor?
+
+Monitors ensure that shared data and public members are modified in a serial
+fashion. 
+
+- What is a mutex member?
+
+A member function that allows one active mutex member. There is mutexlock that
+is acquired in entry and released when leaving or exception. Recursive entry is
+allowed by using a multi acquistion lock.
+
+- What is a destructor?
+
+Destruction is blocked if the thread is active since the entire _Monitor is a
+mutex.
+
+* Scheduling ( Sync )
+
+Monitors may need to schedule tasks in a different order than that of arrival.
+
+- What are the types of scheduling?
+
+External (outside the monitor) using _Accept
+Internal (inside the monitor) using uCondition (benches)
+
+** External Scheduling
+
+- How does _Accept statements work?
+
+There is a chair for each accept statement. When the new function calls are
+coming in, they check the chairs. If a chair has the same function, we dont
+accept those method calls. When the method that it accepted on exits or waits,
+the waiting task then goes on. 
+
+- How can you accept on a chain on accept calls?
+
+Change chair to a stack
+
+** Internal Scheduling
+
+Using a condition lock, we place calls on a waiting queue. When the
+task is signalled, it still waits until the signaller exits or waits.
+
+- When do you use internal vs external?
+
+External => Use external scheduling when possible. Cannot use when we need data
+from outside to decide when to block/unblock. 
+
+Internal => When we want a special ordering of method calls.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
