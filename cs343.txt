@@ -439,26 +439,161 @@ from outside to decide when to block/unblock.
 
 Internal => When we want a special ordering of method calls.
 
+* Reader/Writer Problem
 
+- Stalenss in solution p137 but no freshness. Why?
 
+Solution on pg 137 has staleness because the statement: 
 
+void endWrite(){
+	wcnt = 0;
+	if (!readers.empty()) readers.signal();
+	else writers.signal(); 
+}
 
+We are prioritizing the readers. If its the other way around, we would freshness.
 
+- Can the monitor read/write have the actual read/write functions in them?
 
+For read: no because we will have no concurrency. One read at a time = stupid
+For write: yes because we allow one writer at a time. Monitors will block others. 
 
+- What is the problem with this interface? 
 
+Forget the endRead() by the dev.
 
+- Alternative:
 
+_Monitor ReadersWriter {
+	_Mutex void startRead();
+	...
+	public:
+	_Nomutex void read(...) {
+		startRead();
+		// read
+		endRead();
+	}
+	...
+} 
 
+Must be a _Nomutex, otherwise only one reader is allowed at a time. 
 
+- Using shadow queue to get temporal ordering: (Using shadow queue)
 
+_Monitor ReadersWriter{
+	int rcnt, wcnt;
+	uCondition RW; // one bench for both
+	enum RWenum { READER, WRITER };
 
+	public:
+	void startRead() {
+		// if writer active or bench not empty, wait because we have to wait for our
+		// turn to read
+		if (wcnt != 0 || !RW.empty()) { RW.wait( READER ); }
+		rcnt += 1;
+		// if the front is a reader, then allow them to go. Otherwise, we have to
+		// wait for the writer to update the values to prevent stale reads. If we
+		// keep allowing readers before allowing that writer, then there is
+		// staleness issue. 
+		if (!RW.empty() && RW.front() == READER) RW.signal();
+	}
+	
+	// Nothing tricky here
+	void endRead() { ... }
+	void startWrite() { ... }
+	void endWrite() { ... } 
+}
 
+- Fix to all the issues:
 
+Use external scheduling with _Accept().
 
+- What is the nested monitor problem?
 
+Say you are in Monitor X and you call Monitor Y. You have both X and Y's lock.
+If you block inside Y, you implicitly release Y's lock. However, you are still
+holding X's lock. If the cooperation to release you requires access to X's
+methods, then its a deadlock because no one can enter X.
 
+* Condition, Signal, Wait vs Counting Sem, V, P
 
+* Whats the differences?
+
+- Wait always blocks but P blocks if sem = 0
+- signal before wait is lost, V before P isnt
+- Multiple Vs can start multiple functions at once. Multiple signal wakes one at
+	a time because tasks must exit the monitor sequentially
+
+Monitor types
+=============
+
+* What is explicit scheduling vs implicit?
+
+Explicit: When you as the dev have to schedule manually via accepts / signals
+Implicit: When the monitor tasks care of sched for you. Monitors can prioritize
+based on calling (C), signalled (W) and signaller (S) queues. 
+
+Possibile implicit priorities:
+see pg141
+
+* Why do we reject some priorities?
+
+We reject all priorities where the calling task is the highest priority. This
+causes starvation since an endless calling will not allow S/W to be serviced.
+
+* How does implicit signalling work?
+
+There is a waitUntil busy wait on the condition. 
+
+Example
+_Monitor BoundedBuffer { 
+	public: 
+	...
+	void insert ( ... ) { 
+		// Busy wait
+		waitUntil count != 20; // not in uC++
+		...
+	}
+}
+
+* What are the types of blocking?
+
+Blocking
+C < S < W - Priority blocking because after W, S goes. uC++'s signalBlock()
+C = S < W - No Priority blocking because after W, S or C could go
+
+Non blocking
+C < W < S - Priority nonblocking. Once W is signalled by S, S keeps running
+C = W < S - No Prior nonblocking. Once S is done, W or C can go
+
+Quasi blocking
+C < W = S - When W is signalled, W or S can go
+C = W = S - When W is signalled anyone can go
+
+Immediate Return
+C < W - After W is signalled by S, S is done immediately and W runs
+C = W - W or C can go
+
+Implicit Signal 
+C < W - After W is signalled, by the immediate return signal rule, S is done
+C = W - C or W can go
+
+* Pros and cons of signal types
+
+Implicit - Good prototyping, bad perf
+
+Immediate return - Not powerful for all cases. Optimizes for the common case of
+signal before return.
+
+Quasi - Make cooperation too difficult because a lot of condition checks are
+needed
+
+Priority Nonblocking - no barging and optimizes for signal before return. Just
+means that if a signal is before a return, it will finish the signaller. If it
+was blocking, then the signaller could have easily ended but now gets put on a
+queue. Super inefficient. 
+
+Priority-blocking - no barging
 
 
 
