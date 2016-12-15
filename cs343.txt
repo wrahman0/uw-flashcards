@@ -1,4 +1,5 @@
 Chapter 6
+=========
 
 Lock Programming
 ================
@@ -692,3 +693,451 @@ Chapter 9
 
 Direct Communication
 ====================
+
+* What are the different ways to communicate between tasks?
+
+- Indirect comm: Tasks use monitor to store the input/output of their
+	communication
+- Direct comm: Tasks directly talk to each other
+
+Task
+====
+
+* What is a task?
+
+Task is like a coroutine becaus it has a main. Main has its own state and a
+thread begins work in the main as soon as a task is created. Task also provides
+ME so only one active thread is allowed in the object. It has its own thread and
+stack and can be used for S/ME.
+
+* List of classes and capabilities in uC++:
+
+Thread  Stack  No S/ME   S/ME
+-----------------------------------
+NO			NO		 class		 monitor
+NO			YES		 corout.	 cormonitor
+YES			NO		 reject		 reject				// Not possible because uses caller's stk
+YES			YES		 reject?	 task
+
+Scheduling
+==========
+
+* In a task, why are _Accept statements moved inside of the main instead of the
+* indiv routines?
+
+The main function runs until it exits. As a result, no other calls are accepted
+if _Accept is not placed in the main().
+
+* Sample _When and _Accept stmt:
+
+_Task BoundedBuffer {
+	... 
+	void main() { 
+		for ( ;; ) {
+			_When (count != 20) _Accept(insert) { 
+				// code after insert finishes
+			} or _When (count != 0) _Accept(remove) {
+				// code after remove finishes
+			}
+		}
+	}
+}
+
+
+* What is _Accept( m1, m2 ) s1 equiv to?
+
+_Accept (m1) s1; or _Accept (m2) s1;
+
+* What happens if no _When clause is satisfied?
+
+Behaves like a switch stmt with no match. It keeps going and doesnt block.
+
+* What happens when multiple clauses are satisfied?
+
+Chooses the first _Accept satisfied. Ordering of _Accepts matter.
+
+* Do the above code block of main() with if statments instead of _When.
+
+	void main() { 
+		for ( ;; ) {
+			if ( count > 0 && count < 20) _Accept(insert, remove);
+			else if ( count == 0 ) _Accept(insert);
+			else if ( count == 20 ) _Accept(remove);
+		}
+	}
+
+* How many if statements are needed for N accept clauses?
+
+2^N - 1
+
+* When does an _Accept stmt complete?
+
+When the accepted method is done or a wait occurs inside of it.
+
+* What is the _Else clause?
+
+Using the _Else clause, if no accept can be executed immediately, the
+terminating else is executed. For instance, if we need to check if the
+destructor has been called but dont want to block on it.
+
+* What happens when exception thrown in the members?
+
+Propagates to the caller and a special event is raised in main() 
+as a uMutexFailure::RendezvousFailure().
+
+try {
+	... _Accept(mem);
+} catch (uMutexFailure::RendezvousFailure) {
+	...
+}
+
+Note: _Enable is implicit for RendezvousFailure.
+
+Accepting Destructor
+====================
+
+* Why is accepting a destructor different?
+
+When a caller makes a destruction call, it blocks immediately because
+deallocations occur in destructors. We dont want to dealloc storage and then do
+the _Accept { /* things in here */ }. Thus, the "things in here" runs
+immediately and then the destructor call procedes. 
+
+When a destructor is accepted, the caller is pushed in the A/S stack instead of
+the acceptor. The destructor can resume any blocked tasks on condition queues. 
+
+* What does a task behave like when the main thread finishes?
+
+_Monitor
+
+* When do you accept a stop method vs a destructor?
+
+When you want you convert the Task into a Monitor. Destructor will tear the task
+down. If you dont want that, use a stop method.
+
+Internal Scheduling
+===================
+
+Use a uCondition lock like before:
+
+Task BoundedBuffer {
+	uCondition full, empty;
+	int front, back, count;
+	int Elements[20];
+	public:
+	BoundedBuffer() : front(0), back(0), count(0) {}
+	Nomutex int query() { return count; }
+	void insert( int elem ) {
+		if ( count == 20 ) empty.wait();
+		Elements[back] = elem;
+		back = ( back + 1 ) % 20;
+		count += 1;
+		full.signal();
+	}
+	int remove() {
+		if ( count == 0 ) full.wait();
+		int elem = Elements[front];
+		front = ( front + 1 ) % 20;
+		count -= 1;
+		empty.signal();
+		return elem;
+	}
+	protected:
+	void main() {
+		for ( ;; ) {
+			Accept( ~BoundedBuffer )
+			break;
+			or Accept( insert, remove );
+			// do other work
+		} // for
+	}
+};
+
+* Is there starvation?
+
+No starvation before if there are 50 inserts and 50 removes, then even though we
+prioritize inserts, we will service removes when the buffer fills up. Since the
+buffer is bounded, there will be cases when it filles up if we are just
+accepting inserts. In those cases, inserts will not be accepted and removes will
+get service. At that point, it will alternate between inserts and removes. 
+
+Increasing Concurrency
+======================
+
+Server side
+===========
+* How do you increase server side concurrency?
+
+Move as much code into main as possible. This allows the client to make a call
+and leave as soon as possible. Then the main function takes over and does the
+processing. Meanwhile the client goes and does its thing. This also allows other
+clients to queue up to member calls so that when the main is ready to accept
+calls again, it already has a client waiting. 
+
+No Conc:
+Task server1 {
+	public:
+	void mem1(. . .) { S1 }
+	void mem2(. . .) { S2 }
+	void main() {
+		. . .
+		Accept( mem1 );
+		or Accept( mem2 );
+	}
+}
+
+Some conc by splitting up the work
+Task server1 {
+	public:
+	void mem1(. . .) { S1.part1; }
+	void mem2(. . .) { S2.part1; }
+	void main() {
+		. . .
+		Accept( mem1 ) {
+			S1.part2;
+		} or Accept( mem2 ) {
+			S2.part2;
+		}
+	}
+}
+
+Internal Buffer
+===============
+
+* How do you increase concurrency even more?
+
+Use an internal buffer like a work queue.
+
+* What are cons of a work queue?
+
+- If the fixed sized work queue is always full or always empty, no gain
+- Because of mutex property, clients cant just drop off tasks since blocked when
+	main thread is active. 
+- Clients may need replies
+
+* What is a worker task?
+
+Its an additional thread on top of the single thread of a task. It allows server
+to keep processing but also clients to drop off work.
+
+* Why is it recommended to have same number of workers as clients?
+
+Each client can use a worker and send the request to the server without waiting
+on a worker to be available. ie 50 clients : 1 worker vs 50 clients : 25
+workers.
+
+Administrator
+=============
+
+* Why do we need an admin task?
+
+It is a server managing multiple clients and worker tasks. It does no real work.
+
+* What are the responsibilities of an admin?
+
+- delegate tasks to others
+- receive and check complete work
+- pass complete work on to waiting tasks
+
+* Why cant an admin make calls to other tasks?
+
+If the admin makes a call, it may block and essentially eliminate the entire
+reason for having an admin in the first place. It can block, but not on calls.
+
+It may potentially cause deadlocks.
+
+* When can an admin block?
+
+Waiting for work from clients.
+
+* Why does admin have a list of work?
+
+It will fill this list with requests from clients and take each item and
+delegate them to worker tasks.
+
+* What are worker tasks?
+
+Typical workers:
+
+- Timers: prompt the admin at intervals
+- Notifier: perform a potentially blocking wait on external event
+- Simple worker: do work from admin and return work to admin
+- Complex worker: interacts directly with clients
+- Courier: perform blocking call on behalf of admin
+
+Client Side
+===========
+
+* How can we increase client side concurrency?
+
+We can make it so that the client doesnt wait for the return value. It makes the
+call and simply keeps going. Idea of async call.
+
+Returning Values
+================
+
+Async calls simply when no returns
+
+* How do you do async in the case of return values?
+
+void run() {
+	callee.start(arg); // provide args for the function to run
+	// keep working
+	result = callee.finish(); // Get the server return or block until available
+}
+
+* What is the ticket protocol?
+
+Use tickets. Immediately after a call, a ticket is issued. Second call sends
+ticket to get the data.
+
+Cons:
+- forged tickets
+- multiple use of tickets
+
+* What is the call-back routine protocol?
+
+Register a callback function to the initial func call. When done, callback
+called.
+
+Pros:
+- server doesnt store result, calls callback when ready
+- clients write the cb routine => can decide to block or poll
+
+Cons: 
+- client needs to poll to see if the result is ready
+
+Futures
+=======
+
+* What is a future?
+
+Future is a value thats returned immediately and client thinks its actual value.
+When the server has a return value, it puts in the future. If the future is
+accessed before that, it implicitly blocks. 
+
+* How is a future implemented?
+
+Using a semaphore internally and extends the return type.  
+
+* What are the two types of futures?
+
+- Future_ESM<T>
+- Future_ISM<T>
+
+* What is implicit storage vs explicit storage for futures?
+
+Explicit is user must dealloc, implicit relies on GC.
+
+* What are advantages of futures?
+
+- No protocols
+- Caller doesnt need to poll to see if result is avail
+- Single call needed instead of two calls in the case of tickets
+
+* What are the client operations for futures?
+
+Future_ISM<int> f;
+f = server.perform(...);
+
+* Whats the client side API?
+// f not needed yet
+cout << f(); 	// blocks if future not yet ready
+cout << f; 		// no more () needed after first time
+
+.available()  // true is future value is ready. Non blocking
+.reset() 		  // mark future 
+.operator() 	// returns "READ ONLY" copy of result, blocking, raises exception
+.operator T 	// casts only allowed after blocking or available returned true
+.cancel() 		// cancels work if server allows
+.cancelled() 	// returns true if cancelled
+
+* What are the server operations for futures?
+
+.delivery( T result ) 			// delivers the result, unblocks client
+.reset() 										// mark future as empty
+.exception( uBaseEvent *e ) // throws exception.
+
+* Who deletes the exception? 
+
+Future deletes it implicitly.
+
+_Event E {};
+Future ISM<int> result;
+result.exception( new E ); // deleted by future when reset or deleted
+
+Complex Future Access
+=====================
+
+* What is _Select?
+
+Waits for the future to be available
+
+* How is _Select different from operator()?
+
+operator() throws but select just continues letting us know its available to be
+queried. Once queried do exceptions reveal themselves.
+
+* Whats an example _Select?
+
+_Select ( (f1 || ( f2 && f3 ) ) );
+
+Note: If f1 is available, then unblocks
+
+* Whats an advance _Select usable?
+
+When ( conditional-expression ) Select( f1 )
+	statement-1 // action
+or 
+	When ( conditional-expression ) Select( f2 )
+		statement-2 // action
+	and When ( conditional-expression ) Select( f3 )
+		statement-3 // action
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
