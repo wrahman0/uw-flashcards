@@ -1094,23 +1094,303 @@ or
 	and When ( conditional-expression ) Select( f3 )
 		statement-3 // action
 
+Optimization
+============
+
+* What are the general forms of optimizations?
+
+- Reordering: reorder code / data to increase perf
+- Eliding: remove unnecessary data / data access / computation
+- Replication: processors/mem/data/code are duplicated because of limitation in
+	processing and communication speed
+
+* What are restrictions on optimizations?
+
+- Isomorphic => same output for an input
+- Optimizations are env specific
+
+Sequential Optimizations
+========================
+
+* What are the two dependencies?
+
+- Data dep
+- Control dep
+
+* What is data dep?
+
+1. x = 0;
+2. y = x; 
+
+ln1 and 2 cannot be reordered because ln2 has a data dep on ln1.
+
+* What is control dep?
+
+1. if ( x == 0 )
+2.	 y = 1;
+
+ln 2 has a control dep on ln 1 => cannot be reordered
+
+
+* What are examples of disjoint operations?
+
+t = x;
+s = y; 
+
+Can be reordered as they are completely indep.
+
+* What are issues in the code below?
+
+x = 0; // unnecessary, immediate change
+x = 3;
+for ( int i = 0; i < 10000; i += 1 ); // unnecessary, no loop body
+int factorial( int n, int acc ) { // tail recursion
+	if (n == 0) return acc;
+	return factorial( n - 1, n * acc ); // convert to loop
+}
+
+Note: recursion are costly since stack allocations are needed per frame.
+Compiler tries to convert to loop.
+
+Memory Hierarchy
+================
+
+Cache Review
+============
+
+* What is the problem that we are addressing with caches?
+
+CPU is 100x faster than mem and 10,000x faster than disk. We want to use this
+power of the CPU.
+
+* How do we address this problem of CPU being faster than disk?
+
+Move data from disk into very fast local memory called registers.
+
+* What is the problem with registers and loading data into them?
+
+We have a lot of data but 6-256 registers to load the data. Not enough registers
+for all because ^ registers => ^ cost.
+
+* What is the solution to low register count?
+
+Move frequently accessed data from the disk to registers for as long as
+possible. When the usage becomes less frequent, move them back to disk. CPU uses
+algorithms such as LRU to rotate data.
+
+* What happens when data is accessed among threads? Whats the solution to this?
+
+Highly accessed data among programs (threads) are not brought to registers.
+Solution is to use hardware cache to stage data without pushing to mem. This
+also allows the data to be shared among threads since the cache is visible by
+all threads.
+
+* What are the responsibilities of a cache?
+
+Load data from main mem in 32/64/128 byte blocks called cache lines. Caches also
+hide the slow accessing nature of main mem. The threads only see the cache.
+
+* How does a cache work?
+
+For example, when x is loaded into reg 1, a cache line containing x,y,z are
+copied up the mem hierarchy. When cache is full, cache lines such as x,y,z are
+evicted. When program ends, flush addresses from mem hier.
+
+Cache Coherence
+===============
+
+* Why are there multiple cache levels?
+
+Each level down from the processor has a slower access time but larger capacity.
+We do this so that the data thrown out of L1 cache is in L2 and if needed, can
+easily be brought to L1 again without going all the way to the slow main mem.
+
+* Why is it necessary to eagerly move reads up the memory hierarchy?
 
 
 
+* Why is it advantageous to lazily move writes down the memory hierarchy?
 
+When the processor makes changes to a value, its written to registers/L1. We want
+few writes to main mem. When the cache is about to be rotated out or
+invalidated, we only then write to the main mem => 1 write to main mem. If the
+program is moved from proc 1 to proc x, then registers are invalidated and the
+data hier reforms (writes to main mem). The next time its accessed in proc x,
+the data will be pulled from main mem which has the correct value in it.
 
+* What is cache coherence?
 
+Hardware protocol of ensuring update of duplicated data in cache.
 
+* What is cache consistency?
 
+Addresses solves the problem of "When do the processors see the updates" =>
+bidirectional sync.
 
+* Whats eager/lazy cache consistency?
 
+Eager: updates are seen instantly => complex / slow
+Lazy: allows reader to see own write before ack. => stale data
 
+* What is cache thrashing?
 
+Eviction of useful cache values: ie
 
+INITIAL MEMORY PATTERN: A,B,C,D
+Requested: A Pattern: A,B,C,D
+Requested: B Pattern: B,A,C,D
+Requested: C Pattern: C,B,A,D
+Requested: D Pattern: D,C,B,A
+Requested: E Pattern: E,D,C,B (MISS)
+Requested: A Pattern: A,E,D,C (MISS)
+Requested: B Pattern: B,A,E,D (MISS)
 
+In this case, if cache lines [x,y,z] and [y,z,a] were in the cache, and x is
+updated, then both lines are thrown out. When proc 2 makes a call to y again, it
+will be brought back to memory. The act of it bouncing on the L1 and L2 caches
+is called cache thrashing.
 
+* What is false sharing?
 
+Thread 1 read/writes x while Thread 2 read/writes y ⇒ no direct shared access,
+but indirect sharing as x and y share cache line.
 
+Concurrent Optimizations
+========================
+
+* How is concurrent optimizations different from sequential?
+
+Its more restrictive. Identify concurrent regions of code and restrict those
+sections only. In concurrent optimizations, the notion of current value is
+blurred because race conditions and scheduling can cause different outputs.
+
+* How can sequential optimizations cause failures in conc. code?
+
+Disjoint Problems
+=================
+
+Disjoint writes are not allowed:
+
+1. Wx -> Ry allows Ry -> Wx in sequential. 
+
+Not allowed in concurrent because Dekker's algo breaks and both are allowed into
+the critical section.
+
+2. Rx -> Wy allows Wy -> Rx in sequential.
+Consumer breaks in prod/cons problem. 
+
+cons:
+1 while ( ! Insert ); // R
+2 Insert = false;
+3 data = Data; // W
+
+cons:
+3 data = Data; // W
+1 while ( ! Insert ); // R
+2 Insert = false;
+
+The latter one allows readering of uninserted values.
+
+Wx -> Wy allows Wy -> Wx in sequential.
+
+Producer breaks.
+
+Prod: 
+1 Data = i; // W
+2 Insert = true; // W
+
+Prod:
+2 Insert = true; // W
+1 Data = i; // W
+
+In second example, after insert is true, the consumer can immediately go and
+read the value before its placed inside. 
+
+Eliding Problems
+================
+
+Eliding causes issues:
+T1:
+...
+flag = false // write
+
+T2:
+reg = flag // one read, aux variable
+while ( reg ) { 
+	... 
+} // did not see the change of flag values
+ 
+Replication Problems
+====================
+
+* What is double-check locking?
+
+When you have:
+if ( ip == NULL ) { // singleton check
+	lock.acquire(); // needed to make a new instance of ip
+	if ( ip == NULL ) { // check again since it could have been modified
+		ip = new int (0);
+	}
+	lock.release();
+}
+
+* How can instruction reordering or caching cause double-check locking to fail?
+
+If we cache the value of ip, and a read is done, the ip value could be stale.
+Hence, it would remake another instance.
+
+If there are two threads, and one is making an instance but not done, another
+thread can go past the if check and start accessing ip value before its done
+instantiating.
+
+Reordering causes issues because 
+
+call malloc // new storage address returned in r1
+st #0,(r1) // initialize storage
+st r1,ip // initialize pointe
+
+call malloc // new storage address returned in r1
+st r1,ip // initialize pointe
+st #0,(r1) // initialize storage
+
+In the second one, we are using variable before initialization
+
+Memory Model
+============
+
+* What is the memory model?
+
+The set of optim. performed by the CPU implicitly.
+
+see pg171
+
+* What is the minimum mem model needed for conc?
+
+We need at least sequential consistency (SC) where it says that reads may be
+stale. We can use Dekker / Peterson to have ME. 
+
+Preventing Optimization Problems
+================================
+
+* What is the root of all opt problems?
+
+Races on shared vars
+
+* What is race free and how does it get enforced?
+
+Shared variables are protected by SME but races can exist in locks. Variables
+used in the program has no data race. 
+
+* What are two approaches to for lock programmers to cope with races?
+
+- Ad hoc: manually augment program with pragma to prevent compiler opt.
+- Formal: Language has mechanisms to abstractly define locations of races occur.
+
+* What is volatile?
+
+Qualifier that forces variables to update quickly. Created for longjmp. Java
+volatile => prevents eliding.
+- Ad hoc: 
 
 
 
