@@ -237,6 +237,7 @@ Race condition occurs when there is a missing sync or mutual exclusion. Two
 tasks continue with the assumption that sync took place and depending on
 execution speed for each run, outcome will vary and is undeterministic.
 
+
 Live-lock
 =========
 
@@ -256,7 +257,8 @@ Starvation
 
 A waiting task never gets serviced due to the selection algorithm
 
-** Deadlocking
+Deadlocking
+===========
 
 * What is deadlocking?
 
@@ -731,10 +733,10 @@ if _Accept is not placed in the main().
 * Sample _When and _Accept stmt:
 
 _Task BoundedBuffer {
-	... 
-	void main() { 
+	...
+	void main() {
 		for ( ;; ) {
-			_When (count != 20) _Accept(insert) { 
+			_When (count != 20) _Accept(insert) {
 				// code after insert finishes
 			} or _When (count != 0) _Accept(remove) {
 				// code after remove finishes
@@ -758,7 +760,7 @@ Chooses the first _Accept satisfied. Ordering of _Accepts matter.
 
 * Do the above code block of main() with if statments instead of _When.
 
-	void main() { 
+	void main() {
 		for ( ;; ) {
 			if ( count > 0 && count < 20) _Accept(insert, remove);
 			else if ( count == 0 ) _Accept(insert);
@@ -782,7 +784,7 @@ destructor has been called but dont want to block on it.
 
 * What happens when exception thrown in the members?
 
-Propagates to the caller and a special event is raised in main() 
+Propagates to the caller and a special event is raised in main()
 as a uMutexFailure::RendezvousFailure().
 
 try {
@@ -801,10 +803,10 @@ Accepting Destructor
 When a caller makes a destruction call, it blocks immediately because
 deallocations occur in destructors. We dont want to dealloc storage and then do
 the _Accept { /* things in here */ }. Thus, the "things in here" runs
-immediately and then the destructor call procedes. 
+immediately and then the destructor call procedes.
 
 When a destructor is accepted, the caller is pushed in the A/S stack instead of
-the acceptor. The destructor can resume any blocked tasks on condition queues. 
+the acceptor. The destructor can resume any blocked tasks on condition queues.
 
 * What does a task behave like when the main thread finishes?
 
@@ -859,7 +861,7 @@ No starvation before if there are 50 inserts and 50 removes, then even though we
 prioritize inserts, we will service removes when the buffer fills up. Since the
 buffer is bounded, there will be cases when it filles up if we are just
 accepting inserts. In those cases, inserts will not be accepted and removes will
-get service. At that point, it will alternate between inserts and removes. 
+get service. At that point, it will alternate between inserts and removes.
 
 Increasing Concurrency
 ======================
@@ -872,7 +874,7 @@ Move as much code into main as possible. This allows the client to make a call
 and leave as soon as possible. Then the main function takes over and does the
 processing. Meanwhile the client goes and does its thing. This also allows other
 clients to queue up to member calls so that when the main is ready to accept
-calls again, it already has a client waiting. 
+calls again, it already has a client waiting.
 
 No Conc:
 Task server1 {
@@ -912,7 +914,7 @@ Use an internal buffer like a work queue.
 
 - If the fixed sized work queue is always full or always empty, no gain
 - Because of mutex property, clients cant just drop off tasks since blocked when
-	main thread is active. 
+	main thread is active.
 - Clients may need replies
 
 * What is a worker task?
@@ -1004,7 +1006,7 @@ Pros:
 - server doesnt store result, calls callback when ready
 - clients write the cb routine => can decide to block or poll
 
-Cons: 
+Cons:
 - client needs to poll to see if the result is ready
 
 Futures
@@ -1014,11 +1016,11 @@ Futures
 
 Future is a value thats returned immediately and client thinks its actual value.
 When the server has a return value, it puts in the future. If the future is
-accessed before that, it implicitly blocks. 
+accessed before that, it implicitly blocks.
 
 * How is a future implemented?
 
-Using a semaphore internally and extends the return type.  
+Using a semaphore internally and extends the return type.
 
 * What are the two types of futures?
 
@@ -1046,7 +1048,7 @@ cout << f(); 	// blocks if future not yet ready
 cout << f; 		// no more () needed after first time
 
 .available()  // true is future value is ready. Non blocking
-.reset() 		  // mark future 
+.reset() 		  // mark future
 .operator() 	// returns "READ ONLY" copy of result, blocking, raises exception
 .operator T 	// casts only allowed after blocking or available returned true
 .cancel() 		// cancels work if server allows
@@ -1058,7 +1060,7 @@ cout << f; 		// no more () needed after first time
 .reset() 										// mark future as empty
 .exception( uBaseEvent *e ) // throws exception.
 
-* Who deletes the exception? 
+* Who deletes the exception?
 
 Future deletes it implicitly.
 
@@ -1088,7 +1090,7 @@ Note: If f1 is available, then unblocks
 
 When ( conditional-expression ) Select( f1 )
 	statement-1 // action
-or 
+or
 	When ( conditional-expression ) Select( f2 )
 		statement-2 // action
 	and When ( conditional-expression ) Select( f3 )
@@ -1120,7 +1122,7 @@ Sequential Optimizations
 * What is data dep?
 
 1. x = 0;
-2. y = x; 
+2. y = x;
 
 ln1 and 2 cannot be reordered because ln2 has a data dep on ln1.
 
@@ -1135,7 +1137,7 @@ ln 2 has a control dep on ln 1 => cannot be reordered
 * What are examples of disjoint operations?
 
 t = x;
-s = y; 
+s = y;
 
 Can be reordered as they are completely indep.
 
@@ -1271,13 +1273,13 @@ Disjoint Problems
 
 Disjoint writes are not allowed:
 
-1. Wx -> Ry allows Ry -> Wx in sequential. 
+1. Wx -> Ry allows Ry -> Wx in sequential.
 
 Not allowed in concurrent because Dekker's algo breaks and both are allowed into
 the critical section.
 
 2. Rx -> Wy allows Wy -> Rx in sequential.
-Consumer breaks in prod/cons problem. 
+Consumer breaks in prod/cons problem.
 
 cons:
 1 while ( ! Insert ); // R
@@ -1295,7 +1297,7 @@ Wx -> Wy allows Wy -> Wx in sequential.
 
 Producer breaks.
 
-Prod: 
+Prod:
 1 Data = i; // W
 2 Insert = true; // W
 
@@ -1304,7 +1306,7 @@ Prod:
 1 Data = i; // W
 
 In second example, after insert is true, the consumer can immediately go and
-read the value before its placed inside. 
+read the value before its placed inside.
 
 Eliding Problems
 ================
@@ -1316,10 +1318,10 @@ flag = false // write
 
 T2:
 reg = flag // one read, aux variable
-while ( reg ) { 
-	... 
+while ( reg ) {
+	...
 } // did not see the change of flag values
- 
+
 Replication Problems
 ====================
 
@@ -1343,7 +1345,7 @@ If there are two threads, and one is making an instance but not done, another
 thread can go past the if check and start accessing ip value before its done
 instantiating.
 
-Reordering causes issues because 
+Reordering causes issues because
 
 call malloc // new storage address returned in r1
 st #0,(r1) // initialize storage
@@ -1367,7 +1369,7 @@ see pg171
 * What is the minimum mem model needed for conc?
 
 We need at least sequential consistency (SC) where it says that reads may be
-stale. We can use Dekker / Peterson to have ME. 
+stale. We can use Dekker / Peterson to have ME.
 
 Preventing Optimization Problems
 ================================
@@ -1379,7 +1381,7 @@ Races on shared vars
 * What is race free and how does it get enforced?
 
 Shared variables are protected by SME but races can exist in locks. Variables
-used in the program has no data race. 
+used in the program has no data race.
 
 * What are two approaches to for lock programmers to cope with races?
 
@@ -1390,34 +1392,434 @@ used in the program has no data race.
 
 Qualifier that forces variables to update quickly. Created for longjmp. Java
 volatile => prevents eliding.
-- Ad hoc: 
+
+Chapter 11
+==========
+
+Atomic (Lock Free) Data structures
+==================================
+
+* What is lock free?
+
+Critical sections has no locks
+
+* What is a wait free?
+
+It guarantee's progress => no starvation
+
+Compare and Assign Instructions
+===============================
+
+* What is the CAA instruc?
+
+int Lock = OPEN; // shared
+bool CAA( int &val, int comp, int nval ) {
+	// begin atomic
+	if (val == comp) {
+		val = nval;
+		return true;
+	}
+	return false;
+	// end atomic
+}
+
+Usage:
+void Task::main() { // each task does
+	while ( !CAA(Lock,OPEN,CLOSED) ) {}
+	// critical section
+	Lock = OPEN;
+}
+
+Lock Free Stack
+===============
+
+* How do you build a stack that is lock free and has push/pop?
+
+class Stack {
+	struct Node {
+		// data
+		Node *next;
+	};
+	Node *top;
+public:
+	void push(Node &n);
+	Node* pop();
+}
+
+void Stack::push (Node &n) {
+	// Code for the case where someone else pushes as you do n.next and if stmt.
+	// In that case, we will check if the next value that we assigned is still the
+	// top, meaning no one else pushed to the top, then we assign the n value to
+	// top.
+	for (;;) {
+		n.next = top;
+		if ( CAA(top, n.next, &n) ) break;
+	}
+}
+
+Node *pop() {
+	Node *t;
+	for (;;){
+		t = top;
+		if (t == NULL) break;
+		if (CAA(top, t, t->next)) break;
+	}
+	return t;
+}
+
+ABA Problem
+===========
+
+* What is the ABA problem?
+
+When we do a pop and set a temp value to top->next, get time sliced. During the
+time slice the top is popped and another value. The top is push back on and now
+when we continue, we notice that top is still top and pop it off.
+
+Hardware fix
+============
+
+* What is the hardware fix to the ABA problem?
+
+Use tickets and wrap top of stack with a header class:
+
+bool CAVD( uint64 t &val, uint64 t &comp, uint64 t nval ) {
+	/* begin atomic */
+	if ( val == comp ) { // 64-bit compare
+		val = nval; // 64-bit assignment
+		return true;
+	}
+	comp = val; // 64-bit assignment
+	return false;
+	/* end atomic */
+}
+
+struct Header { // 64-bit (2 x 32-bit) or 128-bit (2 x 64-bit)
+	Node *top; // pointer to stack top
+	int count;
+};
+
+struct Node {
+	// data
+	Header next; // pointer to next node / count
+};
+
+void push( Header &h, Node &n ) {
+	// We need atomic sets because there can be time slicing in asembly level
+	CAVD( n.next, n.next, h ); // atomic assignment: n.next = h
+	for ( ;; ) { // busy loop
+		// If the node's next value is still the top header (which also checks the
+		// ticket count) then we know nothing else was pushed and we can simply
+		// update the top with (Header){ &n, n.next.count + 1 }. Otherwise, n.next
+		// gets the value of the new h as per CAVD and retries again.
+		if ( CAVD( h, n.next, (Header){ &n, n.next.count + 1 } ) ) break;
+	}
+}
+
+Node *pop( Header &h ) {
+	Header t;
+	CAVD( t, t, h ); // atomic assignment: t = h
+	for ( ;; ) { // busy loop
+		if ( t.top == NULL ) break; // empty list ?
+		if ( CAVD( h, t, (Header){ t.top->next.top, t.count } ) ) break;
+	}
+	return t.top;
+}
+
+* What are the issues with this solution?
+
+Although the problem is almost fixed, we have the issue that the counter is
+finite and after a certain number of pushed, it will overflow and screw up. Also
+starvation exists in all the solutions.
+
+Hardware and software fix
+=========================
+
+* What is a hazard pointer?
+
+Every thread has a list of nodes that its currently accessing. They cannot be
+modified by any other threads.
+
+* How do you determine if a node has a reference?
+
+When a node is deleted, you put it on a private list. Then you periodically loop
+the hazard pointers of other nodes to see if any has a reference to this node.
+If no, free it.
+
+* Locks vs lock-free:
+
+LF: no deadlocks, cannot handle all crit sec, performance is unclear.
+
+Exotic Atomic Instr
+===================
+
+* What is load locked (LL)?
+
+Loads a value from memory and sets hardware reservation on the memory that it
+just loaded.
+
+* What is the store conditional (SC) instruction?
+
+Writes new value back to original mem location or another mem location. Only
+stores if no interrupt, exception or write occurred at LL reservation. Failure
+is indicated by setting the register containing the value to be stored to 0.
+
+* How do you implement test/set with LL and SC?
+
+int testSet( int &lock ) { // atomic execution
+	int temp = lock; // read
+	lock = 1; // write
+	return temp; // return previous value
+}
+
+testSet: // register $4 contains pointer to lock
+	ll $2,($4) // read and lock location
+	or $8,$2,1 // set register $8 to 1 (lock | 1)
+	sc $8,($4) // attempt to store 1 into lock
+	beq $8,$0,testSet // retry if interference between read and write
+	j $31 // return previous value in register $2
+
+* Why does LL and SC not suffer from ABA problem?
+
+SC detects a change to top rather than needing indirect ways of checking if the
+value on the top changed (CAA).
+
+Node *pop( Header &h ) {
+	Node *t, next;
+	for ( ;; ) { // busy wait
+		t = LL( top );
+		if ( t == NULL ) break; // empty list ?
+		next = t->next
+		if ( SC( top, next ) ) break; // attempt to update top node
+	}
+	return t;
+}
+
+* What is weak LL/SC?
+
+Reservation granularity may be cache line or memory block rather than word.
+
+Concurrency Language
+====================
+
+ADA 95
+======
+
+* What is when stmt?
+
+external scheduling. Can only contain global vars.
+
+* What is example ada code?
+
+protected type buffer is -- Monitor
+	entry insert( elem : in ElemType ) when count < Size is -- mutex member
+	begin
+		-- add to buffer
+		count := count + 1;
+	end insert;
+	entry remove( elem : out ElemType ) when count > 0 is -- mutex member
+	begin
+		-- remove from buffer, return via parameter
+		count := count - 1;
+	end remove;
+	private:
+		. . . // buffer declarations
+		count : Integer := 0;
+end buffer;
+
+* What is a select statement?
+
+External sched and only appears in task main.
+
+* Does ada have internal sched?
+
+No.
+
+* How do you build a blocking queue?
+
+use requeue to block on a member mutex of the same obj.
+
+SR/Concurrent C++
+=================
+
+* What are the properties?
+
+- Has external sched thru accept
+- no condition var or requeue
+
+* What is the when clause?
+
+Allowed to ref caller's args. When multiple avail, select longest waiting task.
+
+select
+	accept mem( code : in Integer )
+		when code % 2 = 0 do . . . -- accept call with even code
+or
+	accept mem( code : in Integer )
+		when code % 2 = 1 do . . . -- accept call with odd code
+end select;
+
+* What is the by clause?
+
+by clause is calculated for each true when clause and the minimum by clause is
+selected.
+
+select
+	accept mem( code : in Integer )
+		when code % 2 = 0 by -code do . . . -- accept call with largest even code
+or
+	accept mem( code : in Integer )
+		when code % 2 = 1 by code do . . . -- accept call with smallest odd code
+end select;
+
+* What are drawbacks?
+
+Doesnt work when selection requires multple params.
+
+Java
+====
+
+* When does a thread start?
+
+In member run. Requires explicit call to start after thread declaration.
+
+* How is termination sync acheived?
+
+.join()
+
+* How do you get results after a thread finishes?
+
+mytask th = new myTask(. . .); // create and initialized task
+th.start(); // start thread
+// concurrency
+th.join(); // wait for thread termination
+a2 = th.result(); // retrieve answer from task object
+
+* What if synchronized members are public?
+
+No way to do _Accept statements. Complex external scheduling with internal
+sched.
+
+GO
+==
+
+C++11 Concurrency
+=================
+
+Concurrency Models
+==================
+
+Past Exam Question and Solution
+===============================
+
+* Give 2 situations where Nomutex is useful and give examples.
+
+- For read only routines so that writers are not slowed during the reading, ie,
+	a buffer size for drawing a graph
+- For combining a multi-step protocol into a single routine, where some steps
+	need to release the monitor lock, ie, allowing multiple readers for a
+	readers-writer lock.
+
+* Using uC++ write the shortest external schedling monitor using the interface
+* that implements a counting semaphore:
+
+_Monitor semaphore {
+	int count;
+public:
+	semaphore (int count = 1) : count(count) {};
+	void V() {
+		count++;
+	};
+	void P(){
+		if (count <= 0) _Accept(V);
+		count--;
+	};
+}
+
+* For the 8 high level abstractions why is one row rejected and another reject
+* is in question?
+
+- Row rejected because thread cant exist without a stack.
+- Reject? means that if there is no mutex, then all sync and ME needs explicit
+	locks to work properly which is too complex.
+
+* Why is it necessary for flag vars when an admin server needs to return an
+* exception for a client call?
+
+It allows the admin to raise the exception on the client's stack who is
+currently waiting for the result.
+
+* What is the purpose of each future field:
+
+uSemaphore resultAvailable(); // when the client wants the result, and its not
+avail, it blocks on this.
+future *link; // Allows the admin to chain the futures
+ResultType result; // the actual result that gets the value when available
+
+* What is disjoint reordering with respect to optimization?
+
+When the Read/Write occurs on disjoint and unrelated variables, they can be
+reordered however you please because one order doesnt affect the other.
+
+example:
+int x = 0;
+int y = 1;
+
+* How can disjoint reordering cause a concurrent program to fail?
+
+Lets see the case of consumer in a prod/cons problem.
+
+prod:
+data = i;
+inserted = true;
+
+consumer:
+while (!inserted) {}
+inserted = false;
+data = item;
+
+vs:
+
+consumer:
+data = item;
+while(!inserted){}
+
+In the latter reordering, we consumed an item that has not been inserted yet.
+
+Concurrency Models
+==================
+
+* What is an actor?
+
+An admin accepting messages, handling it or sending it to workers.
+
+* Whats the diff between scala and uC++?
+
+- Dynamic vs static comm
+- match message type vs member routine
+- GC can detach threads but uC++ must join
 
 
+Linda
+=====
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+for ( i = 0; i < bufSize; i += 1 ) { // number of buffer elements
+	out( "bufferSem" );
+}
+void producer() {
+	for ( int i = 1; i <= 20; i += 1 ) {
+		in( "bufferSem" ); // wait for empty buffer slot
+		out( "buffer", rand() % 100 ); // insert element into tuple space
+	}
+	in( "bufferSem" ); // wait for empty buffer slot
+	out( "buffer", -1 ); // insert element into tuple space
+}
+int consumer() {
+	int elem;
+	for ( ;; ) {
+		in( "buffer", ?elem ); // remove element from tuple space
+		out( "bufferSem" ); // indicate empty buffer slot
+		if ( elem == -1 ) break;
+		// consume element
+	}
+}
