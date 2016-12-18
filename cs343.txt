@@ -92,10 +92,10 @@ task is still waiting, and there could be a race with a new task. If the race is
 won by the new task, then it just barged in front of the waiting task. Thus,
 no.
 
-* What is the reader/writer problem?
+* What is the readers/writer problem?
 
 Multiple tasks sharing a resource. Some reading others writing. We want to allow
-concurrent readers but only one writter.
+concurrent readers but only one writer.
 
 Using split binary semaphore, we split arrivers, readers and writers.
 
@@ -142,7 +142,7 @@ void Writer::main() {
 	// Need access to the baton for entry code
 	entry_q.P();
 	// We need to wait if there is reader OR writer in the room
-	if ( r_count > 0 || w_count > ) {
+	if ( r_count > 0 || w_count > 0) {
 		w_waiting += 1;
 		entry_q.V(); // release the baton
 		writer_q.P(); // Wait on the writer bench
@@ -176,7 +176,7 @@ writers then the data is too fresh.
 * What is temporal ordering?
 
 Temporal ordering is when the readers and writers are served in FIFO ordering.
-We need one semaphore for that otherwise we dont distinguish between reader vs
+We need one semaphore for that otherwise we don't distinguish between reader vs
 writer arrival times.
 
 We can use a shadow queue to get the type of task info. For instance, we can
