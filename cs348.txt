@@ -1,0 +1,146 @@
+* What is physical design?
+
+Process of selecting data structures to implement conceptual schema.
+
+* What is tuning?
+
+Periodic adjustment of system's physical and/or conceptual schema to adjust for
+changing performance characteristics and/or requirements.
+
+* What is a workload in terms of database?
+
+When the database is designed, its assigned an expected workload, which is the
+expected amount of work that is to be performed by the database for a given
+period of time.
+
+* What is contained in a workload description?
+
+- most important queries and their freq
+- most important updates and their freq
+- desired performance goal for each query/update
+
+* What do we look at for query tuning?
+
+- What relations are accessed?
+- What attributes are accessed?
+- What attributes occur in selection/join conditions?
+
+* What do we look at for update queries?
+
+- What is the type of update?
+- What relations are affected?
+- What attributes are affected?
+- What attributes occur in selection/join conditions?
+
+* What are physical storage options for each relations?
+
+- Unsorted heap (file)
+- Sorted file
+- Hash file
+
+* What are indexes used for?
+
+Speed up lookups
+
+* What are possible indexes?
+
+- B-trees
+- R-trees
+- Hash tables
+
+* What are the effects of adding LastnameIndex:
+
+create index LastnameIndex
+on Employee(Lastname) [CLUSTER];
+
+drop index LastnameIndex;
+
+- When selections involve the LastnameIndex, performance is improved
+- Increase insert time for insertions
+- Increase or decrease exec for Employee updates
+- Increase space requirements for Employee
+
+* Whats a clustering vs non-clustering index?
+
+- For clustering index, rows are stored physically on the disk in the same order
+as the index. One clustering index allowed.
+
+- For non clustering index, there is a second list that has pointers to the
+	physical rows. The physical rows are not modified. Can have multiple
+	non clustering index
+	
+* What is co-clustering?
+
+Their tuples are interleaved within the same file
+
+* Why is co-clustering useful?
+
+When storing heirarchical data (1:N relations).
+
+* How does co-clustering affect performance?
+
+- Speed up joins, especially foreign key joins => since in the same file
+- Sequential scans of either relations become slower => since more data per file
+
+* What are range queries?
+
+select *
+from R
+where A >= C;
+
+* What is the SQL for making one index from many attributes?
+
+create index NameIndex
+on Employee(Lastname, Firstname);
+
+* Why does ordering matter in:
+create index NameIndex
+on Employee(Lastname, Firstname);
+
+The tuples are organized by first Lastname then Firstname.
+
+* What are the 5 physical design guidelines?
+
+1. Dont index unless perf increase outweighs update overhead
+2. Attr. in WHERE clauses are candidate index search keys
+3. Multi-attr index used when several where conditions
+4. Choose indexes that benefit the most number of queries
+5. Each relation can have at most one clustering scheme
+
+* What are 3 ways to tune the conceptual schema?
+
+1. Re-normalization
+2. Denormalization
+3. Partitioning
+
+* What is denormalization?
+
+Purposefully introducing redundancy.
+
+* What is normalization?
+
+Removing redundant data.
+
+* What is horizontal partitioning?
+
+All the columns and subset of rows
+
+* What is vertical partitioning?
+
+Subset of the columns and all the row.
+
+* What are the 4 tuning guidelines?
+
+1. Avoid useless sorts ie GROUP BY
+2. When possible, replace subqueries with joins
+3. When possible, replace corelated subqueries with uncorrelated subqueries
+4. Use vendor supplied tools
+
+* What are the 2 tuning application guidelines?
+
+1. Minimize comm cost
+	i. return fewest possible cols and rows
+	ii. update multiple rows with WHERE instead of cursor
+2. Minimize lock contention and hot-spots
+	i. delay updates as long as possible
+
