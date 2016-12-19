@@ -301,3 +301,5 @@ Decompose such that:
 1. lossless-join
 2. dependency preserving
 3. BCNF (at least 3NF)
+
+
