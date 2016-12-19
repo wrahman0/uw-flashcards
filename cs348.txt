@@ -144,3 +144,160 @@ Subset of the columns and all the row.
 2. Minimize lock contention and hot-spots
 	i. delay updates as long as possible
 
+* Why do we need transactions?
+
+Transaction help with managing concurrent accesses to the db since the db is a
+shared resource.
+
+* What are problems caused by concurrency?
+
+- Inconsistent reads (Staleness)
+- Lost updates
+- Non-repeatable reads
+
+* What are problems caused by failures?
+
+- if fails during query: partial query executed
+- if fails after query: partial data updated
+- if fails in between queries: info lost, ie withdraw money but didnt deposit
+
+* What are transaction commands?
+
+- Commit (sql: commit)
+- Abort  (sql: rollback)
+
+* What are properties of transactions?
+
+- Atomic: 			entirely or not at all
+- Consistent: 	preserves consistency of db
+- Isolated:			dont interfere with each other
+- Durable:			permanent after commit
+
+* What are the 3 transaction modes options in sql?
+
+1. diagnotic size: How many error conditions to record
+2. access mode: READ ONLY or READ WRITE (default)
+3. isolation level: how the interactions of transactions are managed
+
+* What are the 4 isolation levels:
+
+1. Level 0: Read uncommitted - can see uncommitted changes of others
+2. Level 1: Read committed   - can see only committed changes but non repeatable
+3. Level 2: Repeatable read  - repeatable reads but phantoms exists
+4. Level 3: Serializability  - executed one at a time in same order
+
+* What are the criteria for conflict?
+
+1. 2 different transactions
+2. operate on the same resource
+3. one of the operation is a write
+
+* How do you test for serializability?
+
+Serialization iff serialization graph is acyclic.
+
+* Know how to draw serialization graph
+
+ch 11, slide 32
+
+* What are relational design principals?
+
+- semantic unity
+- avoid info repetition
+- avoid null
+- avoid spurious joins
+
+* What are problems with one large table?
+
+- update problems
+- insert problem
+- delete problem
+- increases space requirements
+
+* What is functional dependency?
+
+When a set of attributes uniquely determines another set of values
+
+X -> Y means X functionally determines Y.
+
+* What is a superkey?
+
+Set of attr. such that no two tuples agree on their values for those attr.
+
+* What is a candidate key?
+
+Minimal superkey.
+
+* What is a primary key?
+
+A candidate key chosen by DBA.
+
+* What is a closure?
+
+Closure of a set of FD F (denoted F+) is the set of all FD that are satisfied by
+every relational instance that satisfies F.
+
+* How do you compute closures?
+
+Algo: Ch 10, slide 18
+
+* What is a schema decomp?
+
+R = R_1 || ... || R_n
+
+* What 3 things does a good composition avoid?
+
+- losing info
+- complicate checking of constraints
+- contains anomalies 
+
+* What is lossless-join decomp?
+
+If rejoining the decomposed tables always produces exactly the tuples in the
+original.
+
+The decomp of R = {R1, R2} is lossless iff the common attr of R1 and R2 form a
+superkey of either schema.
+
+* What is a normal form?
+
+When you transform the schema into a form where there is a primary key and a set
+of mutually indep attributes.
+
+* What are the normal forms dependant on FDs?
+
+- BCNF
+- 3NF
+
+* How do you determine if a schema is BCNF?
+
+If X -> Y then X is a superkey of the relation. 
+
+Example: R = {Sno, Sname, City, Pno, Pname, Price}
+
+Sno -> Sname, City
+Pno -> Pname
+Sno, Pno -> Price
+
+Sno determines Sname and city but is not a superkey because Sno and Pno are
+needed to determine price.
+
+* What is 3NF?
+
+In BCNF, we have that for any FD, X is a superkey. For 3NF we have that if Y is
+not prime, ie its not part of any candidate key, then X should be a superkey.
+
+* What is the minimal cover?
+
+For every set of FD F, there is a minimal set of dependencies F' (Min cover)
+
+* What do functional dependencies do?
+
+Provides clues towards eliminating redundancies in relational schema.
+
+Goals:
+
+Decompose such that:
+1. lossless-join
+2. dependency preserving
+3. BCNF (at least 3NF)
