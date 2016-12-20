@@ -302,4 +302,180 @@ Decompose such that:
 2. dependency preserving
 3. BCNF (at least 3NF)
 
+* What is impedence mismatch?
 
+The problem of how the data should be passed between set-oriented SQL and the
+application programming language. 
+
+* What is a cursor?
+
+If a query returns more than one row, then a cursor must be used to retrieve
+values from the result. Cursor is a pointer to one of the values.
+
+* How do you use a cursor?
+
+1. Declare
+2. Open
+3. Fetch one or more tuples
+4. Close
+
+* What is the fetch command?
+
+fetch [<location>] cursor-name [ INTO <host-var>, ... ];
+
+* How are dynamic embedded sql written?
+
+- PREPARE 
+- EXECUTE
+
+* What are SQL descriptors?
+
+If the numbers and types of input and output values are not known in advance,
+use this to determine them at run-time. 
+
+* What is the SQLDA (descriptor area)? 
+
+Its used to hold a desc of the struc of a query result. 
+
+* What is the DESCRIBE command?
+
+It can be used to populate a descriptor area => find the struct of a query
+result.
+
+* What is SQLJ? 
+
+Allows SQL embedding into Java.
+
+* What is static and dynamic SQL?
+
+Static: sql statements are prepared during compile time
+Dynamic: during runtime => more flexible
+
+* What are stored procedures?
+
+Stored procedure executes app logic directly in the DBMS process.
+
+* What are the adv of stored procedures?
+
+1. Minimize data transfers costs
+2. Centralize app code
+3. Logical indep
+
+* What is a stored proc example?
+
+CREATE FUNCTION deptSalariesF(dept CHAR(3))
+	RETURNS TABLE(salary...)
+	LANGUAGE SQL
+RETURN
+	SELECT salary
+	FROM employee
+	WHERE workdept = dept
+
+* What is the advantage of CLI vs Embedded?
+
+CLI - compile once and access all dbms
+Embedded - compile when you need to switch
+
+* What is a view?
+
+A view is a relation in the external schema whose instance is determined by the
+instances of the relations in the conceptual schema. 
+
+* How are views like base relations?
+
+- Access controls can be applied
+- Other views can be define in terms of it
+- Schema info appears in the database schema
+
+* What are the 2 types of views?
+
+- Virtual: used for queries, not stored in the db
+- Materialized: query executed, view constructed, stored in db
+
+* Whats the view creation command?
+
+create [materialized] view <name> 
+	as <query>
+
+* What happens when you query a virtual view?
+
+- compile time: view def is found
+- query is updated with the view def
+- query optimized and exec
+
+* When is a view updatable?
+
+- query ref only one table
+- outputs simple attr
+- no grouping/aggr/distinct
+- no nested queries
+- no set operations
+
+* What is SQL?
+
+SQL is structured query language. Made of 2 sublanguages: DML & DDL
+
+* What DDL and DML?
+
+- DML is data manip language: select, insert, update, delete
+- DDL is data definition language: create, drop
+
+* Why is the SQL standard multisets?
+
+- Duplicates allowed (Use select distinct to get rid of dupes)
+
+* How do you find the min cover?
+
+- List all FD
+- Make RHS one attribute
+- For each FD, compute the closure
+- For each FD, try to use other FDs only to get the same X->Y value
+	if you can, its redundant
+	else its part of the min cover
+
+* How do you find the candidate keys?
+
+- You find the min cover
+- Candidate keys are the LHS
+
+* Determine if the decompositions preserves the dependency.
+
+1. Start with a set {}
+2. Insert the LHS UNION first decomposition R1 into the set
+3. Compute the closure = { set, FD }
+4. If you can derive the other FDs, then you are done
+5. Otherwise, take the other FD and UNION the LHS 
+6. Intersect the other decomposition R2
+7. Go to step 3 and repeat until all the decompositions used
+8. If not satisfied, then doesnt preserve dependency
+
+* Determine if the decomposition is lossless-join?
+
+Example:
+D = { ABE, BCF, ABDF }
+
+Use the chase algo:
+
+1. Take the decompositions and make a table:
+			A		B		C		D		E		F
+ABE		a		b		c1	d1	e		f1
+BCF		a2	b		c		d2	e2	f
+ABDF	a		b		c3	d		e3	f
+
+Step 1: Using AB->E, because we have a row with AB->E. Convert other rows that
+have AB -> e_x to AB -> e. We replace x with the lowest number when there are
+numbers involved. 
+
+			A		B		C		D		E		F
+ABE		a		b		c1	d1	e		f1
+BCF		a2	b		c		d2	e2	f
+ABDF	a		b		c3	d		e		f
+
+If we can get to a row with no numbers, then its lossless.
+
+* State the strongest normal form for the relation _____.
+
+Look at the min cover dependency set. If the LHS is all super keys, then its
+BCNF.
+
+* 
