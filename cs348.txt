@@ -32,7 +32,7 @@ period of time.
 - What attributes are affected?
 - What attributes occur in selection/join conditions?
 
-* What are physical storage options for each relations?
+* What are physical storage options?
 
 - Unsorted heap (file)
 - Sorted file
@@ -68,7 +68,7 @@ as the index. One clustering index allowed.
 - For non clustering index, there is a second list that has pointers to the
 	physical rows. The physical rows are not modified. Can have multiple
 	non clustering index
-	
+
 * What is co-clustering?
 
 Their tuples are interleaved within the same file
@@ -249,7 +249,7 @@ R = R_1 || ... || R_n
 
 - losing info
 - complicate checking of constraints
-- contains anomalies 
+- contains anomalies
 
 * What is lossless-join decomp?
 
@@ -271,7 +271,7 @@ of mutually indep attributes.
 
 * How do you determine if a schema is BCNF?
 
-If X -> Y then X is a superkey of the relation. 
+If X -> Y then X is a superkey of the relation.
 
 Example: R = {Sno, Sname, City, Pno, Pname, Price}
 
@@ -305,7 +305,7 @@ Decompose such that:
 * What is impedence mismatch?
 
 The problem of how the data should be passed between set-oriented SQL and the
-application programming language. 
+application programming language.
 
 * What is a cursor?
 
@@ -325,24 +325,24 @@ fetch [<location>] cursor-name [ INTO <host-var>, ... ];
 
 * How are dynamic embedded sql written?
 
-- PREPARE 
+- PREPARE
 - EXECUTE
 
 * What are SQL descriptors?
 
 If the numbers and types of input and output values are not known in advance,
-use this to determine them at run-time. 
+use this to determine them at run-time.
 
-* What is the SQLDA (descriptor area)? 
+* What is the SQLDA (descriptor area)?
 
-Its used to hold a desc of the struc of a query result. 
+Its used to hold a desc of the struc of a query result.
 
 * What is the DESCRIBE command?
 
 It can be used to populate a descriptor area => find the struct of a query
 result.
 
-* What is SQLJ? 
+* What is SQLJ?
 
 Allows SQL embedding into Java.
 
@@ -379,7 +379,7 @@ Embedded - compile when you need to switch
 * What is a view?
 
 A view is a relation in the external schema whose instance is determined by the
-instances of the relations in the conceptual schema. 
+instances of the relations in the conceptual schema.
 
 * How are views like base relations?
 
@@ -394,7 +394,7 @@ instances of the relations in the conceptual schema.
 
 * Whats the view creation command?
 
-create [materialized] view <name> 
+create [materialized] view <name>
 	as <query>
 
 * What happens when you query a virtual view?
@@ -444,7 +444,7 @@ SQL is structured query language. Made of 2 sublanguages: DML & DDL
 2. Insert the LHS UNION first decomposition R1 into the set
 3. Compute the closure = { set, FD }
 4. If you can derive the other FDs, then you are done
-5. Otherwise, take the other FD and UNION the LHS 
+5. Otherwise, take the other FD and UNION the LHS
 6. Intersect the other decomposition R2
 7. Go to step 3 and repeat until all the decompositions used
 8. If not satisfied, then doesnt preserve dependency
@@ -464,7 +464,7 @@ ABDF	a		b		c3	d		e3	f
 
 Step 1: Using AB->E, because we have a row with AB->E. Convert other rows that
 have AB -> e_x to AB -> e. We replace x with the lowest number when there are
-numbers involved. 
+numbers involved.
 
 			A		B		C		D		E		F
 ABE		a		b		c1	d1	e		f1
@@ -478,4 +478,4 @@ If we can get to a row with no numbers, then its lossless.
 Look at the min cover dependency set. If the LHS is all super keys, then its
 BCNF.
 
-* 
+*
